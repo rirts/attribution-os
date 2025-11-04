@@ -50,6 +50,11 @@ jobs:
           pip install "dbt-core==1.8.*" "dbt-postgres==1.8.*"
           # si luego agregas librerías, crea requirements.ci.txt y cámbialo a: pip install -r requirements.ci.txt
 
+      - name: Prepare CI profile (rename profiles.ci.yml -> profiles.yml)
+        run: |
+          cp analytics/attribution_dbt/profiles/profiles.ci.yml \
+             analytics/attribution_dbt/profiles/profiles.yml
+
       - name: dbt debug
         working-directory: analytics/attribution_dbt
         run: dbt debug --target ci
