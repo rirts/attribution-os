@@ -1,0 +1,24 @@
+name: 'attribution_dbt'
+version: '1.0.0'
+config-version: 2
+
+profile: 'attribution_os'
+
+model-paths: ['models']
+snapshot-paths: ['snapshots']
+target-path: 'target'
+clean-targets: ['target', 'dbt_packages']
+
+models:
+  attribution_dbt:
+    +materialized: table
+
+seeds:
+  attribution_dbt:
+    orders_seed:
+      +column_types:
+        order_id: integer
+        order_date: date
+        channel: text
+        amount: numeric(12,2)
+        order_ts: timestamp

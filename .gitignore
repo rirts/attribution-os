@@ -1,0 +1,15 @@
+# Python / dbt
+.venv/
+analytics/attribution_dbt/target/
+analytics/attribution_dbt/dbt_packages/
+
+# Creds / locales
+.env*
+analytics/attribution_dbt/profiles/profiles.yml
+
+# Dumps y backups
+backups/
+*.dump
+
+# Metabase cache (si existiera)
+metabase-data/

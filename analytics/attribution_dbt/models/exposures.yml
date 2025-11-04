@@ -1,0 +1,15 @@
+version: 2
+exposures:
+  - name: attribution_dashboard_v1
+    type: dashboard
+    maturity: low
+    url: "http://localhost:3000/dashboard/2-attribution-os-overview-seed?channel=&order_date="
+    description: "Dashboard de orders, revenue diario y mensual."
+    owner:
+      name: Rafael Ruiz
+      email: rafartejadasegura@gmail.com
+    depends_on:
+      - ref('stg_orders')
+      - ref('mart_revenue_daily')
+      - ref('mart_revenue_monthly')
+      - ref('mart_kpis')

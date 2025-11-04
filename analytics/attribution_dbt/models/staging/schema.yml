@@ -1,0 +1,19 @@
+﻿version: 2
+
+models:
+  - name: stg_web2
+    columns:
+      - name: event_id
+        tests: [not_null, unique]
+      - name: ts
+        tests: [not_null]
+
+  - name: stg_chain_mempool
+    columns:
+      - name: txid
+        tests: [not_null, unique]
+
+  - name: stg_chain_blocks
+    columns:
+      - name: height
+        tests: [not_null, unique]
