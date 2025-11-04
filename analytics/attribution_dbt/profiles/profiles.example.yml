@@ -1,0 +1,11 @@
+﻿attribution_os:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: localhost
+      user: attrib
+      password: attrib
+      port: 5433
+      dbname: attrib_analytics
+      schema: public

@@ -1,0 +1,100 @@
+﻿version: 2
+
+sources:
+  - name: attrib
+    schema: public
+    description: >
+      Source schema for demo orders loaded via dbt seeds.
+    tables:
+      - name: orders_seed
+        description: >
+          Seeded orders table used as the project’s raw feed.
+          One row per order.
+        loaded_at_field: order_ts
+        freshness:
+          warn_after: {count: 36, period: hour}
+          error_after: {count: 72, period: hour}
+        columns:
+          - name: order_id
+            description: Unique identifier for the order.
+          - name: order_date
+            description: Calendar date when the order was placed (YYYY-MM-DD).
+          - name: channel
+            description: Acquisition channel (ads, email, direct).
+          - name: amount
+            description: Order total amount in project currency.
+          - name: order_ts
+            description: Load timestamp used for freshness checks.
+
+models:
+  - name: stg_orders
+    description: >
+      Staging table for raw orders: light normalization (types/casing) and
+      one-row-per-order grain.
+    tests:
+      - unique:
+          column_name: order_id
+      - not_null:
+          column_name: order_id
+    columns:
+      - name: order_id
+        description: Primary key of the order.
+      - name: order_date
+        description: Order date normalized to DATE.
+      - name: channel
+        description: Lowercased acquisition channel.
+      - name: amount
+        description: Order amount cast to numeric(12,2).
+
+  - name: mart_revenue_daily
+    description: >
+      Daily revenue aggregated by (order_date, channel) from stg_orders.
+    tests:
+      - not_null:
+          column_name: order_date
+      - accepted_values:
+          column_name: channel
+          values: ["ads","email","direct"]
+    columns:
+      - name: order_date
+        description: Aggregation day.
+      - name: channel
+        description: Channel dimension.
+      - name: revenue
+        description: Sum of amount for the day and channel.
+
+  - name: mart_revenue_monthly
+    description: >
+      Monthly revenue mart (one row per month) derived from daily results.
+    tests:
+      - not_null:
+          column_name: month
+    columns:
+      - name: month
+        description: First day of the month (YYYY-MM-01).
+      - name: revenue
+        description: Total monthly revenue (all channels).
+      - name: revenue_ads
+        description: Monthly revenue for channel "ads".
+      - name: revenue_email
+        description: Monthly revenue for channel "email".
+      - name: revenue_direct
+        description: Monthly revenue for channel "direct".
+
+  - name: mart_kpis
+    description: >
+      Compact KPI snapshot (orders, revenue, AOV, channels count) for dashboards.
+    tests:
+      - not_null:
+          column_name: as_of
+    columns:
+      - name: as_of
+        description: Snapshot timestamp defining KPI cut-off.
+      - name: orders_count
+        description: Total number of orders in the period.
+      - name: revenue_total
+        description: Total revenue in the period.
+      - name: aov
+        description: Average order value (revenue_total / orders_count).
+      - name: channels_count
+        description: Distinct number of channels observed.

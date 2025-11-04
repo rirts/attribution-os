@@ -1,0 +1,41 @@
+﻿services:
+  attrib-metabase:
+    build:
+      context: ../infra/metabase
+      args:
+        METABASE_VERSION: v0.56.7
+    container_name: attrib-metabase
+    ports:
+      - "3001:3000"
+    environment:
+      # App DB = Postgres (NO H2)
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase_db         # <- forzamos esta BD
+      MB_DB_HOST: attrib-postgres
+      MB_DB_PORT: 5432
+      MB_DB_USER: ${DB_USER:-attrib}
+      MB_DB_PASS: ${DB_PASS:-attrib}
+
+      # Miscelánea
+      MB_PLUGINS_DIR: /plugins
+      MB_SITE_LOCALE: "es"
+      MB_SITE_URL: "http://localhost:3001"
+      JAVA_TOOL_OPTIONS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+
+    volumes:
+      - ../warehouse:/data:ro
+
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health | grep -q '\"status\":\"ok\"' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    networks:
+      - attrib-net
+
+networks:
+  attrib-net:
+    external: true
+    name: attrib-net
