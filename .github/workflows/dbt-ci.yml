@@ -1,0 +1,77 @@
+name: dbt CI
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: attrib_analytics
+          POSTGRES_USER: attrib
+          POSTGRES_PASSWORD: attrib
+        options: >-
+          --health-cmd="pg_isready -U attrib -d attrib_analytics"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+        ports:
+          - 5432:5432
+
+    env:
+      DBT_PROFILES_DIR: ${{ github.workspace }}/analytics/attribution_dbt/profiles
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install deps (dbt-core + postgres adapter)
+        run: |
+          python -m pip install --upgrade pip
+          pip install "dbt-core==1.8.*" "dbt-postgres==1.8.*"
+          # si luego agregas librerías, crea requirements.ci.txt y cámbialo a: pip install -r requirements.ci.txt
+
+      - name: Prepare CI profile (rename profiles.ci.yml -> profiles.yml)
+        run: |
+          cp analytics/attribution_dbt/profiles/profiles.ci.yml \
+             analytics/attribution_dbt/profiles/profiles.yml
+
+      - name: dbt debug
+        working-directory: analytics/attribution_dbt
+        run: dbt debug --target ci
+
+      - name: dbt seed
+        working-directory: analytics/attribution_dbt
+        run: dbt seed --full-refresh --target ci
+
+      - name: dbt run
+        working-directory: analytics/attribution_dbt
+        run: dbt run --target ci
+
+      - name: dbt test
+        working-directory: analytics/attribution_dbt
+        run: dbt test --target ci
+
+      - name: dbt docs generate (opcional)
+        if: always()
+        working-directory: analytics/attribution_dbt
+        run: dbt docs generate --target ci
